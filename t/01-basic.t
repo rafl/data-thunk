@@ -1,4 +1,4 @@
-use Test::More;
+use Test::More 0.89;
 use ok 'Data::Thunk';
 
 use Scalar::Util qw(reftype blessed);
