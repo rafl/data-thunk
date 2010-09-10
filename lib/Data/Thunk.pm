@@ -43,7 +43,7 @@ my ( $vivify_code, $vivify_scalar ) = ( $Data::Thunk::Code::vivify_code, $Data::
 sub force ($) {
 	my $val = shift;
 
-	if ( blessed($val) ) { 
+	if ( blessed($val) ) {
 		no warnings; # UNIVERSAL::isa
 		if ( $val->UNIVERSAL::isa('Data::Thunk::Code') ) { # we wanna know what it's *real* class is
 			return $val->$vivify_code;
