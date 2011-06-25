@@ -34,8 +34,29 @@ sub lazy_new ($;@) {
 }
 
 sub lazy_object (&;@) {
-	my ( $thunk, @args ) = @_;
-	bless { @args, code => $thunk }, "Data::Thunk::Object";
+	my ( $thunk, %args ) = @_;
+        my $instance = bless { %args, code => $thunk }, "Data::Thunk::Object";
+        if (!exists $args{reftype} || $args{reftype} eq 'HASH') {
+            bless $instance, "Data::Thunk::Object";
+        }
+        elsif ($args{reftype} eq 'ARRAY') {
+            bless [$instance], "Data::Thunk::Object";
+        }
+        elsif ($args{reftype} eq 'SCALAR') {
+            bless \$instance, "Data::Thunk::Object";
+        }
+        elsif ($args{reftype} eq 'CODE') {
+            bless sub { $instance }, "Data::Thunk::Object";
+        }
+        elsif ($args{reftype} eq 'GLOB') {
+            require Symbol;
+            my $sym = Symbol::gensym();
+            *$sym = $instance;
+            bless $sym, "Data::Thunk::Object";
+        }
+        else {
+            Carp::croak("Can't fake a reftype of $args{reftype}");
+        }
 }
 
 my ( $vivify_code, $vivify_scalar ) = ( $Data::Thunk::Code::vivify_code, $Data::Thunk::ScalarValue::vivify_scalar );
@@ -147,7 +168,8 @@ Create a new thunk.
 Creates a thunk that is expected to be an object.
 
 If the C<class> attribute is provided then C<isa> and C<can> will work as class
-methods without vivifying the object.
+methods without vivifying the object. If the C<reftype> attribute is provided,
+the thunk will use this reftype (HASH is the default).
 
 Any other attributes in %attrs will be used to shadow method calls. If the keys
 are code references they will be invoked, otherwise they will be simply

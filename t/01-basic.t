@@ -84,4 +84,37 @@ foreach my $class ( qw( Data::Thunk::Code Data::Thunk::Object Data::Thunk::Scala
 	is( blessed($shared), "SomeClass", "shared value not destroyed" );
 }
 
+{
+    package Scalar::Class;
+    sub new { bless \undef, shift }
+}
+
+{
+    package Array::Class;
+    sub new { bless [], shift }
+}
+
+{
+    package Hash::Class;
+    sub new { bless {}, shift }
+}
+
+{
+    package Code::Class;
+    sub new { bless sub {}, shift }
+}
+
+{
+    package Glob::Class;
+    sub new { require Symbol; bless Symbol::gensym(), shift }
+}
+
+{
+    is(reftype(lazy_new("Scalar::Class", reftype => 'SCALAR')), 'REF', "right reftype");
+    is(reftype(lazy_new("Array::Class", reftype => 'ARRAY')), 'ARRAY', "right reftype");
+    is(reftype(lazy_new("Hash::Class", reftype => 'HASH')), 'HASH', "right reftype");
+    is(reftype(lazy_new("Code::Class", reftype => 'CODE')), 'CODE', "right reftype");
+    is(reftype(lazy_new("Glob::Class", reftype => 'GLOB')), 'GLOB', "right reftype");
+}
+
 done_testing;

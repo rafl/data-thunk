@@ -12,6 +12,28 @@ use namespace::clean;
 
 use UNIVERSAL::ref;
 
+my $dereference = sub {
+    my $val = shift;
+    if (reftype($val) eq 'HASH') {
+        return $val;
+    }
+    elsif (reftype($val) eq 'ARRAY') {
+        return $val->[0];
+    }
+    elsif (reftype($val) eq 'REF') {
+        return $$val;
+    }
+    elsif (reftype($val) eq 'CODE') {
+        return $val->();
+    }
+    elsif (reftype($val) eq 'GLOB') {
+        return *$val{HASH};
+    }
+    else {
+        Carp::croak("unknown reftype: $val");
+    }
+};
+
 our $get_field = sub {
 	my ( $obj, $field ) = @_;
 
@@ -32,6 +54,7 @@ our $get_field = sub {
 sub ref {
 	my ( $self, @args ) = @_;
 
+        $self = $dereference->($self) if blessed($self);
 	if ( my $class = $self->$get_field("class") ) {
 		return $class;
 	} else {
@@ -51,6 +74,7 @@ foreach my $sym (keys %UNIVERSAL::) {
 	eval "sub $sym {
 		my ( \$self, \@args ) = \@_;
 
+                \$self = \$dereference->(\$self) if Scalar::Util::blessed(\$self);
 		if ( my \$class = \$self->\$get_field('class') ) {
 			return \$class->$sym(\@args);
 		} else {
@@ -61,6 +85,7 @@ foreach my $sym (keys %UNIVERSAL::) {
 
 sub AUTOLOAD {
 	my ( $self, @args ) = @_;
+        $self = $dereference->($self) if blessed($self);
 	my ( $method ) = ( our $AUTOLOAD =~ /([^:]+)$/ );
 
 	if ( $method !~ qr/^(?: class | code )$/ ) {
